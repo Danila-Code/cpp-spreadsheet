@@ -144,18 +144,20 @@ public:
 // При делении на 0 выбрасывайте ошибку вычисления FormulaError
     double Evaluate(const GetValue& get_value) const override {
         double res_value{};
+	double lhs_value = lhs_->Evaluate(get_value);
+	double rhs_value = rhs_->Evaluate(get_value);
         switch(type_) {
             case Type::Add:
-                res_value = lhs_->Evaluate(get_value) + rhs_->Evaluate(get_value);
+                res_value = lhs_value + rhs_value;
                 break;
             case Type::Subtract:
-                res_value = lhs_->Evaluate(get_value) - rhs_->Evaluate(get_value);
+                res_value = lhs_value - rhs_value;
                 break;
             case Type::Multiply:
-                res_value = lhs_->Evaluate(get_value) * rhs_->Evaluate(get_value);
+                res_value = lhs_value * rhs_value;
                 break;
             case Type::Divide:
-                res_value = lhs_->Evaluate(get_value) / rhs_->Evaluate(get_value);
+                res_value = lhs_value / rhs_value;
                 break;
         }
         return std::isfinite(res_value) ? res_value
