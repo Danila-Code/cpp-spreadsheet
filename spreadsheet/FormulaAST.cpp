@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cmath>
 #include <memory>
-#include <optional>
 #include <sstream>
 
 namespace ASTImpl {
@@ -72,7 +71,7 @@ public:
     virtual ~Expr() = default;
     virtual void Print(std::ostream& out) const = 0;
     virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-    virtual double Evaluate(/*добавьте сюда нужные аргументы*/ args) const = 0;
+    virtual double Evaluate(const GetValue& get_value) const = 0;
 
     // higher is tighter
     virtual ExprPrecedence GetPrecedence() const = 0;
@@ -142,8 +141,25 @@ public:
         }
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/) const override {
-			// Скопируйте ваше решение из предыдущих уроков.
+// При делении на 0 выбрасывайте ошибку вычисления FormulaError
+    double Evaluate(const GetValue& get_value) const override {
+        double res_value{};
+        switch(type_) {
+            case Type::Add:
+                res_value = lhs_->Evaluate(get_value) + rhs_->Evaluate(get_value);
+                break;
+            case Type::Subtract:
+                res_value = lhs_->Evaluate(get_value) - rhs_->Evaluate(get_value);
+                break;
+            case Type::Multiply:
+                res_value = lhs_->Evaluate(get_value) * rhs_->Evaluate(get_value);
+                break;
+            case Type::Divide:
+                res_value = lhs_->Evaluate(get_value) / rhs_->Evaluate(get_value);
+                break;
+        }
+        return std::isfinite(res_value) ? res_value
+                                        : throw FormulaError(FormulaError::Category::Arithmetic);
     }
 
 private:
@@ -180,13 +196,41 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(const GetValue& get_value) const override {
+        return type_ == Type::UnaryMinus ? -operand_->Evaluate(get_value) 
+                                         : operand_->Evaluate(get_value); 
     }
 
 private:
     Type type_;
     std::unique_ptr<Expr> operand_;
+};
+
+class NumberExpr final : public Expr {
+public:
+    explicit NumberExpr(double value)
+        : value_(value) {
+    }
+
+    void Print(std::ostream& out) const override {
+        out << value_;
+    }
+
+    void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
+        out << value_;
+    }
+
+    ExprPrecedence GetPrecedence() const override {
+        return EP_ATOM;
+    }
+
+// Для чисел метод возвращает значение числа.
+    double Evaluate(const GetValue&) const override {
+        return value_;
+    }
+
+private:
+    double value_;
 };
 
 class CellExpr final : public Expr {
@@ -211,38 +255,13 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // реализуйте метод.
+// Для чисел метод возвращает значение числа.
+    double Evaluate(const GetValue& get_value) const override {
+        return get_value(*cell_);
     }
 
 private:
     const Position* cell_;
-};
-
-class NumberExpr final : public Expr {
-public:
-    explicit NumberExpr(double value)
-        : value_(value) {
-    }
-
-    void Print(std::ostream& out) const override {
-        out << value_;
-    }
-
-    void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
-        out << value_;
-    }
-
-    ExprPrecedence GetPrecedence() const override {
-        return EP_ATOM;
-    }
-
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        return value_;
-    }
-
-private:
-    double value_;
 };
 
 class ParseASTListener final : public FormulaBaseListener {
@@ -374,7 +393,11 @@ FormulaAST ParseFormulaAST(std::istream& in) {
 
 FormulaAST ParseFormulaAST(const std::string& in_str) {
     std::istringstream in(in_str);
-    return ParseFormulaAST(in);
+    try {
+        return ParseFormulaAST(in);
+    } catch (const std::exception& exc) {
+        std::throw_with_nested(FormulaException(exc.what()));
+    }
 }
 
 void FormulaAST::PrintCells(std::ostream& out) const {
@@ -391,8 +414,8 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute(/*добавьте нужные аргументы*/ args) const {
-    return root_expr_->Evaluate(/*добавьте нужные аргументы*/ args);
+double FormulaAST::Execute(GetValue& get_value) const {
+    return root_expr_->Evaluate(get_value);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
