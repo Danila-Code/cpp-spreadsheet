@@ -1,4 +1,9 @@
+#include <iostream>
 #include <limits>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "common.h"
 #include "formula.h"
@@ -348,7 +353,7 @@ void TestCellCircularReferences() {
 }
 }  // namespace
 
-int main() {
+void Test() {
     TestRunner tr;
     RUN_TEST(tr, TestPositionAndStringConversion);
     RUN_TEST(tr, TestPositionToStringInvalid);
@@ -369,4 +374,116 @@ int main() {
     RUN_TEST(tr, TestCellReferences);
     RUN_TEST(tr, TestFormulaIncorrect);
     RUN_TEST(tr, TestCellCircularReferences);
+}
+
+// ********************************************************
+void PrintManual(std::ostream& output) {
+    using namespace std::literals;
+
+    output << "How to use the spreadsheet:\n"s 
+        << "\tenter:\n" 
+        << "\t\tset pos text - to add/set cell to the position pos,\n"s
+        << "\t\tclear pos - to delete cell or clear cell contents with pos* position\n"
+        << "\t\tprint values - to display on screen values of all cells of the table\n"
+        << "\t\tprint texts - to display on screen text content of all cells of the table\n"
+        << "\t\texit - to end the program\n"s
+        << "*pos, for example \"A2\", must contains an alphabetic column number and a numeric row number\n";
+}
+
+struct Request {
+    enum class RequestType {
+        SET,
+        CLEAR,
+        PRINT_VALUES,
+        PRINT_TEXTS,
+        EXIT
+    };
+
+    RequestType type;
+    std::optional<Position> pos;
+    std::optional<std::string_view> text;
+};
+
+std::vector<std::string_view> SplitIntoWords(std::string_view line) {
+    std::vector<std::string_view> words;
+
+    char del = ' ';
+    size_t first_pos = 0;
+    size_t next_pos = line.find(del);
+    
+    while (next_pos != line.npos) {
+        words.push_back(line.substr(first_pos, next_pos - first_pos));
+        first_pos = next_pos + 1;
+        next_pos = line.find(del, first_pos);
+    }
+    words.push_back(line.substr(first_pos, next_pos - first_pos));
+    return words;
+}
+
+Request GetRequest(std::istream& input) {
+    using namespace std::literals;
+    
+    std::string line;
+    std::getline(input, line);
+
+    if (line == "exit"sv) {
+        return {Request::RequestType::EXIT};
+    }
+    if (line == "print values"sv) {
+        return {Request::RequestType::PRINT_VALUES};
+    }
+    if (line == "print texts"sv) {
+        return {Request::RequestType::PRINT_TEXTS};
+    }
+    
+    std::vector<std::string_view> words = SplitIntoWords(line);
+    if (words[0] == "set"sv) {
+        return {Request::RequestType::SET, Position::FromString(words[1]), words[2]};
+    }
+    if (words[0] == "clear"sv) {
+        return {Request::RequestType::CLEAR, Position::FromString(words[1])};
+    }
+    // errors
+}
+
+class SheetHandle {
+public:
+    explicit SheetHandle(std::unique_ptr<SheetInterface> sheet) : sheet_{std::move(sheet)} {
+    }
+
+    void ProceedRequests(std::istream& input, std::ostream& output) {
+        Request request = GetRequest(input);
+        while (request.type != Request::RequestType::EXIT) {
+            ExecuteRequest(output, request);
+            request = GetRequest(input);
+        }
+    }
+private:
+    void ExecuteRequest(std::ostream& output, const Request& request) {
+        switch(request.type) {
+            case Request::RequestType::SET:
+                sheet_->SetCell(request.pos.value(), std::string(request.text.value()));
+                break;
+            case Request::RequestType::CLEAR:
+                sheet_->ClearCell(request.pos.value());
+                break;
+            case Request::RequestType::PRINT_VALUES:
+                sheet_->PrintValues(output);
+                break;
+            case Request::RequestType::PRINT_TEXTS:
+                sheet_->PrintTexts(output);
+                break;
+        }
+    } 
+
+    std::unique_ptr<SheetInterface> sheet_;
+};
+
+int main() {
+    //Test();
+
+    PrintManual(std::cout);
+
+    SheetHandle sheet_handle(CreateSheet());
+    sheet_handle.ProceedRequests(std::cin, std::cout);
 }

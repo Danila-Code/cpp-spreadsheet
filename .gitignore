@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+*.vscode
+*.jar
+/build/*
+/antlr4_runtime/*

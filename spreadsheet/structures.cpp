@@ -59,14 +59,30 @@ bool Size::operator==(Size rhs) const {
 }
 
 Position Position::FromString(std::string_view str) {
-    std::regex row_col_regex(R"/(([A-Z]+)([0-9]+))/");
-    std::cmatch match_res;
+    std::string_view col_str;
+    std::string_view row_str;
 
-    if(!std::regex_match(str.data(), match_res, row_col_regex)) {
-        return NONE;
+    auto is_valid_letter = [](char c) {
+        return c >= FIRST_LETTER && c < FIRST_LETTER + LETTERS;
+    };
+
+    size_t num_begin = 0;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (num_begin && !isdigit(str[i])) {
+            return NONE;
+        }
+        if (isdigit(str[i]) && !num_begin) {
+            num_begin = i;
+            continue;
+        }
+        if (!num_begin && !is_valid_letter(str[i])) {
+            return NONE;
+        }
     }
+    row_str = str.substr(num_begin);
+    col_str = str.substr(0, num_begin);
 
-    Position pos{std::atoi(match_res[2].str().data()) - 1,
-                 FromLatinAlphaToDecimal(match_res[1].str())};
+    Position pos{std::atoi(row_str.data()) - 1,
+                 FromLatinAlphaToDecimal(col_str)};
     return pos.IsValid() ? pos : NONE;
 }
