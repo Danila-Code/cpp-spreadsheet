@@ -1,25 +1,58 @@
-# Spreadsheet
+# Электронная таблица
+Учебный проект в Яндекс.Практикуме
 
-## Description
-A spreadsheet is a rectangular table with numbered rows and columns. It stores cells in which numbers, strings, and formulas can be stored. Formulas can contain links to other cells.
+## Описание
+Программа является аналогом MS Excel. Она представляет из себя прямоугольную таблицу с пронумерованными строками и столбцами. В ячейках таблицы можно хранить числа, текст или вычисляемые формулы. Формулы могут содержать ссылки на другие ячейки. Парсинг и анализ содержимого ячеек реализован с помощью библиотеки ANTLR.
 
-## Features
-* calculated formulas in cells
-* defining circular references and displaying messages about it
-* caching of formula calculation results for more efficient operation
-* analyzing formulas and cell contents using antlr4
+## Технологии:
+* C++
+* STL
+* RAII
+* умные указатели
+* ООП
+* алгоритмы на графах
+* динамический полиморфизм
+* antl4
+* CMake
 
-### Using technologies
-C++, STL, RAII, smart pointers, algorithms on graphs, object-oriented programming, antl4, CMake
+## В электронной таблице реализованы:
+* полиморфный класс отдельной ячейки Cell
+* класс для хранения и вычисления формулы Formula
+* класс абстрактного синтаксического дерева для разбора формулы FormulaAST
+* класс таблицы/листа Sheet
+* main.cpp содержит класс SheetHandle для обработки запросов к электронной таблице и демонстрации её функционала 
 
-### System requirements
-C++ 17, STL, CMake 3.8
+## Будущие изменения:
+* графический интерфейс
+* сохранение электронной таблицы в файл
+* загрузка таблицы из файла
 
-## In the future I plan to add
-* a graphical interface
-* the ability to save spreadsheet to a file
-* the ability to load spreadsheet from a file
+## Особенности электронной таблицы:
+* хранение различных типов в ячейках (динамический полиморфизм)
+* эффективное хранение ячеек с помощью хэш-таблицы (std::unordered_map)
+* исключения, которые помогают выявить циклические зависимости, деление на ноль, неподходящее содержимое ячейки
+* кэширование значений уже вычисленных формул
 
-Now main.cpp implements a simple console application with instructions.
+## Запуск проекта
+1. Скачайте файлы из текущего репозитория.
+2. Скачайте архив antlr4-cpp-runtime*.zip из раздела Download на сайте antlr.org и помеcтите его в папку "spreadsheet".
+3. В папке "spreadsheet" создайть папку "antlr4_runtime" и скачайть в неё файлы библиотеки для C++ [antlr4](https://github.com/antlr/antlr4/tree/master/runtime/Cpp).
+4. Скачайте и установите [Java SE Runtime Environment 8](https://www.oracle.com/java/technologies/downloads/#java8).
+5. Скачайте и установките [ANTLR](https://www.antlr.org/) по инструкии Quick Start.
+6. Скачайте файл [antlr-4.12.0-complete.jar](https://www.antlr.org/download/antlr-4.9-complete.jar) и поместите его в папку "spreadsheet".
+7. Версия antlr-4.12.0-complete.jar может отличаться. В файле CMakeLists.txt замените версию JAR-файла на актуальную.
+8. Создайте папку "build" для сборки проекта.
+9  Запустите сборку проекта с помощью cmake build.
+
+## Системные требования
+Компилятор С++, С++17, Java SE Runtime Environment 8, ANTLR, CMake 3.8
+
+
+
+
+
+
+
+
 
 
