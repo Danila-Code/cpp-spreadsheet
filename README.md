@@ -42,10 +42,11 @@
 6. Скачайте файл [antlr-4.12.0-complete.jar](https://www.antlr.org/download/antlr-4.9-complete.jar) и поместите его в папку "spreadsheet".
 7. Версия antlr-4.12.0-complete.jar может отличаться. В файле CMakeLists.txt замените версию JAR-файла на актуальную.
 8. Создайте папку "build" для сборки проекта.
-9  Запустите сборку проекта с помощью cmake build.
+9. Запустите сборку проекта с помощью cmake build.
 
 ## Системные требования
 Компилятор С++, С++17, Java SE Runtime Environment 8, ANTLR, CMake 3.8
+
 
 
 
